@@ -64,18 +64,24 @@ with app.app_context():
     import models
     db.create_all()
     
-    # Create admin user if doesn't exist
+    # Create or update admin user
     from models import Admin
-    admin = Admin.query.filter_by(username='admin').first()
-    if not admin:
-        admin = Admin(
-            username='admin',
-            email='admin@swiftpay.com',
-            password_hash=bcrypt.generate_password_hash('admin123').decode('utf-8')
-        )
+    admin = Admin.query.filter_by(email='admin@swiftpay.com').first()
+    if admin:
+        # Update existing admin with new secure credentials
+        admin.username = 'swiftpay_admin'
+        admin.password_hash = bcrypt.generate_password_hash('SwiftPay2024!Admin').decode('utf-8')
+        db.session.commit()
+        logging.info("Admin credentials updated: username=swiftpay_admin")
+    else:
+        # Create new admin user
+        admin = Admin()
+        admin.username = 'swiftpay_admin'
+        admin.email = 'admin@swiftpay.com'
+        admin.password_hash = bcrypt.generate_password_hash('SwiftPay2024!Admin').decode('utf-8')
         db.session.add(admin)
         db.session.commit()
-        logging.info("Default admin user created: username=admin, password=admin123")
+        logging.info("Secure admin user created: username=swiftpay_admin")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

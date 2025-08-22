@@ -77,14 +77,13 @@ def transfer():
         if is_suspicious_activity(user, amount, 'transfer'):
             flash('Transaction flagged for review. Please contact support.', 'warning')
             # Create pending transaction
-            transaction = Transaction(
-                from_user_id=user.id,
-                to_user_id=recipient.id,
-                amount=amount,
-                transaction_type='transfer',
-                status='pending',
-                description=f'Transfer to {recipient.username}: {description}'
-            )
+            transaction = Transaction()
+            transaction.from_user_id = user.id
+            transaction.to_user_id = recipient.id
+            transaction.amount = amount
+            transaction.transaction_type = 'transfer'
+            transaction.status = 'pending'
+            transaction.description = f'Transfer to {recipient.username}: {description}'
             db.session.add(transaction)
             db.session.commit()
             return render_template('user/transfer.html')
@@ -94,14 +93,13 @@ def transfer():
         recipient.balance += amount
         
         # Create transaction record
-        transaction = Transaction(
-            from_user_id=user.id,
-            to_user_id=recipient.id,
-            amount=amount,
-            transaction_type='transfer',
-            status='completed',
-            description=f'Transfer to {recipient.username}: {description}'
-        )
+        transaction = Transaction()
+        transaction.from_user_id = user.id
+        transaction.to_user_id = recipient.id
+        transaction.amount = amount
+        transaction.transaction_type = 'transfer'
+        transaction.status = 'completed'
+        transaction.description = f'Transfer to {recipient.username}: {description}'
         db.session.add(transaction)
         db.session.commit()
         
@@ -126,13 +124,12 @@ def add_funds():
         user.balance += amount
         
         # Create transaction record
-        transaction = Transaction(
-            to_user_id=user.id,
-            amount=amount,
-            transaction_type='deposit',
-            status='completed',
-            description='Account funding'
-        )
+        transaction = Transaction()
+        transaction.to_user_id = user.id
+        transaction.amount = amount
+        transaction.transaction_type = 'deposit'
+        transaction.status = 'completed'
+        transaction.description = 'Account funding'
         db.session.add(transaction)
         db.session.commit()
         
@@ -166,13 +163,12 @@ def withdraw():
         user.balance -= amount
         
         # Create transaction record
-        transaction = Transaction(
-            from_user_id=user.id,
-            amount=amount,
-            transaction_type='withdrawal',
-            status='completed',
-            description=f'Withdrawal to bank account {bank_account}'
-        )
+        transaction = Transaction()
+        transaction.from_user_id = user.id
+        transaction.amount = amount
+        transaction.transaction_type = 'withdrawal'
+        transaction.status = 'completed'
+        transaction.description = f'Withdrawal to bank account {bank_account}'
         db.session.add(transaction)
         db.session.commit()
         

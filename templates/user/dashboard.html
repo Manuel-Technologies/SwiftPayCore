@@ -3,203 +3,323 @@
 {% block title %}Dashboard - SwiftPay{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0">Welcome back, {{ user.username }}!</h2>
-            <small class="text-muted">Account: {{ user.account_number }}</small>
-        </div>
-    </div>
-</div>
-
-<!-- Balance Card -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card bg-primary text-white balance-card">
-            <div class="card-body text-center py-4">
-                <h3 class="card-title mb-0">Wallet Balance</h3>
-                <h1 class="display-4 fw-bold mb-3">{{ format_currency(user.balance) }}</h1>
-                <div class="row">
-                    <div class="col-md-4 mb-2 mb-md-0">
-                        <a href="{{ url_for('user.add_funds') }}" class="btn btn-light btn-sm w-100">
-                            <i class="fas fa-plus me-1"></i>Add Funds
-                        </a>
-                    </div>
-                    <div class="col-md-4 mb-2 mb-md-0">
-                        <a href="{{ url_for('user.transfer') }}" class="btn btn-outline-light btn-sm w-100">
-                            <i class="fas fa-paper-plane me-1"></i>Transfer
-                        </a>
-                    </div>
-                    <div class="col-md-4">
-                        <a href="{{ url_for('user.withdraw') }}" class="btn btn-outline-light btn-sm w-100">
-                            <i class="fas fa-credit-card me-1"></i>Withdraw
-                        </a>
+<div class="py-4">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-1">Welcome back, <span class="text-gradient">{{ user.username }}</span>! 👋</h1>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-credit-card me-1"></i>
+                        Account: <span class="font-monospace fw-bold">{{ user.account_number }}</span>
+                    </p>
+                </div>
+                <div class="d-none d-md-block">
+                    <div class="text-end">
+                        <small class="text-muted d-block">Last login</small>
+                        <span class="fw-bold">{{ user.last_login.strftime('%b %d, %I:%M %p') }}</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Quick Stats -->
-<div class="row mb-4">
-    <div class="col-md-4 mb-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body text-center">
-                <div class="text-success mb-2">
-                    <i class="fas fa-gift fa-2x"></i>
+    <!-- Balance Card -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="balance-card">
+                <div class="position-relative">
+                    <h3 class="mb-2 opacity-75">Your Wallet Balance</h3>
+                    <h1 class="display-4 mb-4">{{ format_currency(user.balance) }}</h1>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <a href="{{ url_for('user.add_funds') }}" class="btn btn-glass w-100">
+                                <i class="fas fa-plus me-2"></i>Add Funds
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{{ url_for('user.transfer') }}" class="btn btn-glass w-100">
+                                <i class="fas fa-paper-plane me-2"></i>Send Money
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{{ url_for('user.withdraw') }}" class="btn btn-glass w-100">
+                                <i class="fas fa-university me-2"></i>Withdraw
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <h5>Referral Earnings</h5>
-                <h4 class="text-success mb-0">{{ format_currency(referral_earnings) }}</h4>
             </div>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body text-center">
-                <div class="text-info mb-2">
-                    <i class="fas fa-link fa-2x"></i>
-                </div>
-                <h5>Referral Code</h5>
-                <div class="input-group input-group-sm">
-                    <input type="text" class="form-control text-center fw-bold" value="{{ user.referral_code }}" readonly id="referralCode">
-                    <button class="btn btn-outline-secondary" type="button" onclick="copyReferralCode()">
-                        <i class="fas fa-copy"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body text-center">
-                <div class="text-warning mb-2">
-                    <i class="fas fa-clock fa-2x"></i>
-                </div>
-                <h5>Last Login</h5>
-                <small class="text-muted">{{ user.last_login.strftime('%b %d, %Y at %I:%M %p') }}</small>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Referral Link -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card border-success">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="fas fa-share-alt me-2"></i>Share & Earn</h5>
+    <!-- Quick Stats -->
+    <div class="row mb-5">
+        <div class="col-md-4 mb-4">
+            <div class="stat-card">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="transaction-icon deposit me-3">
+                        <i class="fas fa-gift"></i>
+                    </div>
+                    <div>
+                        <h6 class="stat-label mb-1">Referral Earnings</h6>
+                        <h3 class="stat-value mb-0">{{ format_currency(referral_earnings) }}</h3>
+                    </div>
+                </div>
+                <div class="progress" style="height: 4px;">
+                    <div class="progress-bar bg-success" style="width: 75%"></div>
+                </div>
             </div>
-            <div class="card-body">
-                <p class="mb-3">Invite friends and earn ₦1,000 for each person who signs up with your link!</p>
-                <div class="input-group">
-                    <input type="text" class="form-control" value="{{ request.url_root }}auth/signup?referral_code={{ user.referral_code }}" readonly id="referralLink">
-                    <button class="btn btn-success" type="button" onclick="copyReferralLink()">
-                        <i class="fas fa-copy me-1"></i>Copy Link
-                    </button>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="stat-card">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="transaction-icon transfer-in me-3">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="stat-label mb-1">Referral Code</h6>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control fw-bold text-center" 
+                                   value="{{ user.referral_code }}" readonly id="referralCode">
+                            <button class="btn btn-outline-primary" type="button" onclick="copyReferralCode()">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="stat-card">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="transaction-icon withdrawal me-3">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div>
+                        <h6 class="stat-label mb-1">Recent Transactions</h6>
+                        <h3 class="stat-value mb-0">{{ recent_transactions|length }}</h3>
+                    </div>
+                </div>
+                <div class="progress" style="height: 4px;">
+                    <div class="progress-bar bg-info" style="width: 60%"></div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Recent Transactions -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Transactions</h5>
-                <a href="{{ url_for('user.transactions') }}" class="btn btn-sm btn-outline-primary">View All</a>
-            </div>
-            <div class="card-body p-0">
-                {% if recent_transactions %}
-                    <div class="list-group list-group-flush">
-                        {% for transaction in recent_transactions %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <div class="me-3">
-                                        {% if transaction.transaction_type == 'transfer' %}
-                                            {% if transaction.from_user_id == user.id %}
-                                                <i class="fas fa-arrow-up text-danger"></i>
-                                            {% else %}
-                                                <i class="fas fa-arrow-down text-success"></i>
-                                            {% endif %}
-                                        {% elif transaction.transaction_type == 'deposit' %}
-                                            <i class="fas fa-plus text-success"></i>
-                                        {% elif transaction.transaction_type == 'withdrawal' %}
-                                            <i class="fas fa-minus text-danger"></i>
-                                        {% elif transaction.transaction_type == 'referral_bonus' %}
-                                            <i class="fas fa-gift text-warning"></i>
-                                        {% endif %}
-                                    </div>
-                                    <div>
-                                        <div class="fw-bold">{{ transaction.transaction_type.replace('_', ' ').title() }}</div>
-                                        <small class="text-muted">{{ transaction.created_at.strftime('%b %d, %Y at %I:%M %p') }}</small>
-                                    </div>
-                                </div>
-                                <div class="text-end">
-                                    {% if transaction.transaction_type == 'transfer' and transaction.from_user_id == user.id %}
-                                        <div class="text-danger fw-bold">-{{ format_currency(transaction.amount) }}</div>
-                                    {% else %}
-                                        <div class="text-success fw-bold">+{{ format_currency(transaction.amount) }}</div>
-                                    {% endif %}
-                                    <span class="badge bg-{{ 'success' if transaction.status == 'completed' else 'warning' if transaction.status == 'pending' else 'danger' }}">
-                                        {{ transaction.status.title() }}
-                                    </span>
-                                </div>
+    <!-- Referral Share Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card card-modern border-success">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-2">
+                                <i class="fas fa-share-alt text-success me-2"></i>
+                                Invite Friends & Earn ₦1,000 Each
+                            </h5>
+                            <p class="text-muted mb-3">
+                                Share your referral link and earn ₦1,000 for every friend who joins SwiftPay!
+                            </p>
+                            <div class="input-group">
+                                <input type="text" class="form-control" 
+                                       value="{{ request.url_root }}auth/signup?referral_code={{ user.referral_code }}" 
+                                       readonly id="referralLink">
+                                <button class="btn btn-success" type="button" onclick="copyReferralLink()">
+                                    <i class="fas fa-copy me-1"></i>Copy Link
+                                </button>
                             </div>
-                        {% endfor %}
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" 
+                                 style="width: 100px; height: 100px;">
+                                <i class="fas fa-users text-success" style="font-size: 2.5rem;"></i>
+                            </div>
+                        </div>
                     </div>
-                {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-history fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">No transactions yet</h5>
-                        <p class="text-muted">Start by adding funds to your wallet or making a transfer</p>
-                    </div>
-                {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Recent Activity
+                    </h5>
+                    <a href="{{ url_for('user.transactions') }}" class="btn btn-sm btn-outline-primary">
+                        View All <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_transactions %}
+                        <div class="list-group list-group-flush">
+                            {% for transaction in recent_transactions %}
+                                <div class="list-group-item">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                            <div class="transaction-icon 
+                                                {% if transaction.transaction_type == 'transfer' %}
+                                                    {% if transaction.from_user_id == user.id %}transfer-out{% else %}transfer-in{% endif %}
+                                                {% elif transaction.transaction_type == 'deposit' %}deposit
+                                                {% elif transaction.transaction_type == 'withdrawal' %}withdrawal
+                                                {% elif transaction.transaction_type == 'referral_bonus' %}deposit
+                                                {% endif %}">
+                                                {% if transaction.transaction_type == 'transfer' %}
+                                                    {% if transaction.from_user_id == user.id %}
+                                                        <i class="fas fa-arrow-up"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-arrow-down"></i>
+                                                    {% endif %}
+                                                {% elif transaction.transaction_type == 'deposit' %}
+                                                    <i class="fas fa-plus"></i>
+                                                {% elif transaction.transaction_type == 'withdrawal' %}
+                                                    <i class="fas fa-minus"></i>
+                                                {% elif transaction.transaction_type == 'referral_bonus' %}
+                                                    <i class="fas fa-gift"></i>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="fw-bold">{{ transaction.transaction_type.replace('_', ' ').title() }}</div>
+                                            <small class="text-muted">{{ transaction.created_at.strftime('%b %d, %Y at %I:%M %p') }}</small>
+                                        </div>
+                                        <div class="col-auto text-end">
+                                            {% if transaction.transaction_type == 'transfer' and transaction.from_user_id == user.id %}
+                                                <div class="fw-bold text-danger">-{{ format_currency(transaction.amount) }}</div>
+                                            {% else %}
+                                                <div class="fw-bold text-success">+{{ format_currency(transaction.amount) }}</div>
+                                            {% endif %}
+                                            <span class="badge bg-{{ 'success' if transaction.status == 'completed' else 'warning' if transaction.status == 'pending' else 'danger' }}">
+                                                {{ transaction.status.title() }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-4">
+                                <i class="fas fa-history text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
+                            </div>
+                            <h5 class="text-muted">No transactions yet</h5>
+                            <p class="text-muted mb-4">Start by adding funds to your wallet or making a transfer</p>
+                            <div class="d-flex justify-content-center gap-2">
+                                <a href="{{ url_for('user.add_funds') }}" class="btn btn-success">
+                                    <i class="fas fa-plus me-1"></i>Add Funds
+                                </a>
+                                <a href="{{ url_for('user.transfer') }}" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane me-1"></i>Send Money
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+}
+
+.progress {
+    background-color: rgba(0,0,0,0.1);
+    border-radius: 10px;
+}
+
+.input-group-sm .form-control {
+    font-size: 0.875rem;
+    border-radius: 0.5rem 0 0 0.5rem;
+}
+
+.input-group-sm .btn {
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+
+@media (max-width: 768px) {
+    .balance-card {
+        padding: 2rem 1rem;
+    }
+    
+    .balance-card .display-4 {
+        font-size: 2.5rem;
+    }
+    
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
 
 <script>
 function copyReferralCode() {
     const referralCode = document.getElementById('referralCode');
-    referralCode.select();
-    referralCode.setSelectionRange(0, 99999);
-    navigator.clipboard.writeText(referralCode.value);
-    
-    // Show success message
-    const btn = referralCode.nextElementSibling;
-    const originalHtml = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-check"></i>';
-    btn.classList.remove('btn-outline-secondary');
-    btn.classList.add('btn-success');
-    
-    setTimeout(() => {
-        btn.innerHTML = originalHtml;
-        btn.classList.remove('btn-success');
-        btn.classList.add('btn-outline-secondary');
-    }, 2000);
+    if (referralCode) {
+        copyToClipboard(referralCode.value, referralCode.nextElementSibling);
+    }
 }
 
 function copyReferralLink() {
     const referralLink = document.getElementById('referralLink');
-    referralLink.select();
-    referralLink.setSelectionRange(0, 99999);
-    navigator.clipboard.writeText(referralLink.value);
+    if (referralLink) {
+        copyToClipboard(referralLink.value, referralLink.nextElementSibling);
+    }
+}
+
+function copyToClipboard(text, button) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function() {
+            showCopySuccess(button);
+        }).catch(function() {
+            fallbackCopy(text, button);
+        });
+    } else {
+        fallbackCopy(text, button);
+    }
+}
+
+function fallbackCopy(text, button) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
     
-    // Show success message
-    const btn = referralLink.nextElementSibling;
-    const originalHtml = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
-    btn.classList.remove('btn-success');
-    btn.classList.add('btn-outline-success');
+    try {
+        document.execCommand('copy');
+        showCopySuccess(button);
+    } catch (err) {
+        console.error('Copy failed');
+    }
     
-    setTimeout(() => {
-        btn.innerHTML = originalHtml;
-        btn.classList.remove('btn-outline-success');
-        btn.classList.add('btn-success');
+    document.body.removeChild(textArea);
+}
+
+function showCopySuccess(button) {
+    const originalContent = button.innerHTML;
+    const originalClasses = button.className;
+    
+    button.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+    button.className = button.className.replace(/btn-\w+/g, 'btn-success');
+    
+    setTimeout(function() {
+        button.innerHTML = originalContent;
+        button.className = originalClasses;
     }, 2000);
 }
 </script>

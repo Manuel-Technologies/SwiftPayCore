@@ -76,14 +76,13 @@ def signup():
             user_referral_code = generate_referral_code()
         
         # Create user
-        user = User(
-            username=username,
-            email=email,
-            password_hash=bcrypt.generate_password_hash(password).decode('utf-8'),
-            account_number=account_number,
-            referral_code=user_referral_code,
-            referred_by=referral_code if referral_code else None
-        )
+        user = User()
+        user.username = username
+        user.email = email
+        user.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+        user.account_number = account_number
+        user.referral_code = user_referral_code
+        user.referred_by = referral_code if referral_code else None
         
         db.session.add(user)
         db.session.commit()
@@ -97,22 +96,20 @@ def signup():
                 
                 # Create referral record
                 from models import Referral
-                referral = Referral(
-                    referrer_id=referrer.id,
-                    referred_user_id=user.id,
-                    bonus_amount=1000,
-                    is_paid=True
-                )
+                referral = Referral()
+                referral.referrer_id = referrer.id
+                referral.referred_user_id = user.id
+                referral.bonus_amount = 1000
+                referral.is_paid = True
                 db.session.add(referral)
                 
                 # Create transaction record
-                transaction = Transaction(
-                    to_user_id=referrer.id,
-                    amount=1000,
-                    transaction_type='referral_bonus',
-                    status='completed',
-                    description=f'Referral bonus for inviting {username}'
-                )
+                transaction = Transaction()
+                transaction.to_user_id = referrer.id
+                transaction.amount = 1000
+                transaction.transaction_type = 'referral_bonus'
+                transaction.status = 'completed'
+                transaction.description = f'Referral bonus for inviting {username}'
                 db.session.add(transaction)
                 db.session.commit()
                 

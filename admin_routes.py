@@ -26,7 +26,7 @@ def login():
         
         admin = Admin.query.filter_by(username=username).first()
         
-        if admin and check_password_hash(admin.password_hash, password):
+        if admin and password and check_password_hash(admin.password_hash, password):
             session['admin_id'] = admin.id
             admin.last_login = datetime.utcnow()
             db.session.commit()
@@ -117,13 +117,12 @@ def add_user_balance(user_id):
     user.balance += amount
     
     # Create transaction record
-    transaction = Transaction(
-        to_user_id=user.id,
-        amount=amount,
-        transaction_type='deposit',
-        status='completed',
-        description='Admin balance adjustment'
-    )
+    transaction = Transaction()
+    transaction.to_user_id = user.id
+    transaction.amount = amount
+    transaction.transaction_type = 'deposit'
+    transaction.status = 'completed'
+    transaction.description = 'Admin balance adjustment'
     db.session.add(transaction)
     db.session.commit()
     
