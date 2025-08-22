@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from werkzeug.security import check_password_hash
 from app import db, bcrypt
 from models import User, Admin, Transaction
 from utils import generate_account_number, generate_referral_code
@@ -20,7 +19,7 @@ def login():
         
         user = User.query.filter_by(email=email).first()
         
-        if user and check_password_hash(user.password_hash, password):
+        if user and bcrypt.check_password_hash(user.password_hash, password):
             if user.is_suspended:
                 flash('Your account has been suspended. Please contact support.', 'error')
                 return render_template('auth/login.html')

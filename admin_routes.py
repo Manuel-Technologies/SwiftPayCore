@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
-from werkzeug.security import check_password_hash
-from app import db
+from app import db, bcrypt
 from models import Admin, User, Transaction, Referral
 from utils import format_currency
 from datetime import datetime, timedelta
@@ -26,7 +25,7 @@ def login():
         
         admin = Admin.query.filter_by(username=username).first()
         
-        if admin and password and check_password_hash(admin.password_hash, password):
+        if admin and password and bcrypt.check_password_hash(admin.password_hash, password):
             session['admin_id'] = admin.id
             admin.last_login = datetime.utcnow()
             db.session.commit()
