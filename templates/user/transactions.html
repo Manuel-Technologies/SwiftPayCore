@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Transaction History - SwiftPay{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-history me-2"></i>Transaction History</h2>
+            <a href="{{ url_for('user.dashboard') }}" class="btn btn-primary">
+                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-0">
+                {% if transactions.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions.items %}
+                                    <tr>
+                                        <td>
+                                            <div>{{ transaction.created_at.strftime('%b %d, %Y') }}</div>
+                                            <small class="text-muted">{{ transaction.created_at.strftime('%I:%M %p') }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if transaction.transaction_type == 'transfer' %}
+                                                    {% if transaction.from_user_id == user.id %}
+                                                        <i class="fas fa-arrow-up text-danger me-2"></i>
+                                                        <span>Transfer Out</span>
+                                                    {% else %}
+                                                        <i class="fas fa-arrow-down text-success me-2"></i>
+                                                        <span>Transfer In</span>
+                                                    {% endif %}
+                                                {% elif transaction.transaction_type == 'deposit' %}
+                                                    <i class="fas fa-plus text-success me-2"></i>
+                                                    <span>Deposit</span>
+                                                {% elif transaction.transaction_type == 'withdrawal' %}
+                                                    <i class="fas fa-minus text-danger me-2"></i>
+                                                    <span>Withdrawal</span>
+                                                {% elif transaction.transaction_type == 'referral_bonus' %}
+                                                    <i class="fas fa-gift text-warning me-2"></i>
+                                                    <span>Referral Bonus</span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>{{ transaction.description or 'N/A' }}</div>
+                                        </td>
+                                        <td>
+                                            {% if transaction.transaction_type == 'transfer' and transaction.from_user_id == user.id %}
+                                                <span class="text-danger fw-bold">-{{ format_currency(transaction.amount) }}</span>
+                                            {% else %}
+                                                <span class="text-success fw-bold">+{{ format_currency(transaction.amount) }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if transaction.status == 'completed' else 'warning' if transaction.status == 'pending' else 'danger' }}">
+                                                {{ transaction.status.title() }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if transactions.pages > 1 %}
+                        <div class="card-footer">
+                            <nav aria-label="Transaction pagination">
+                                <ul class="pagination pagination-sm justify-content-center mb-0">
+                                    {% if transactions.has_prev %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('user.transactions', page=transactions.prev_num) }}">Previous</a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    {% for page_num in transactions.iter_pages() %}
+                                        {% if page_num %}
+                                            {% if page_num != transactions.page %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="{{ url_for('user.transactions', page=page_num) }}">{{ page_num }}</a>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item active">
+                                                    <span class="page-link">{{ page_num }}</span>
+                                                </li>
+                                            {% endif %}
+                                        {% else %}
+                                            <li class="page-item disabled">
+                                                <span class="page-link">…</span>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if transactions.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('user.transactions', page=transactions.next_num) }}">Next</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-history fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">No transactions yet</h4>
+                        <p class="text-muted mb-4">Your transaction history will appear here once you start using SwiftPay</p>
+                        <div class="d-flex justify-content-center gap-2">
+                            <a href="{{ url_for('user.add_funds') }}" class="btn btn-success">
+                                <i class="fas fa-plus me-1"></i>Add Funds
+                            </a>
+                            <a href="{{ url_for('user.transfer') }}" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i>Send Money
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

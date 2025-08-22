@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Add Funds - SwiftPay{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="fas fa-plus me-2"></i>Add Funds</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-4">
+                        <label for="amount" class="form-label">Amount to Add (₦)</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text">₦</span>
+                            <input type="number" class="form-control" id="amount" name="amount" 
+                                   min="100" step="0.01" placeholder="0.00" required>
+                        </div>
+                        <div class="form-text">Minimum amount: ₦100</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>Quick amounts:</h6>
+                        <div class="d-grid gap-2 d-md-flex">
+                            <button type="button" class="btn btn-outline-success" onclick="setAmount(1000)">₦1,000</button>
+                            <button type="button" class="btn btn-outline-success" onclick="setAmount(5000)">₦5,000</button>
+                            <button type="button" class="btn btn-outline-success" onclick="setAmount(10000)">₦10,000</button>
+                            <button type="button" class="btn btn-outline-success" onclick="setAmount(25000)">₦25,000</button>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-credit-card me-2"></i>Add Funds
+                        </button>
+                        <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Payment Methods Info -->
+        <div class="card mt-4 border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Payment Methods</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <i class="fas fa-credit-card fa-2x text-primary mb-2"></i>
+                        <div>Debit Card</div>
+                    </div>
+                    <div class="col-4">
+                        <i class="fas fa-university fa-2x text-success mb-2"></i>
+                        <div>Bank Transfer</div>
+                    </div>
+                    <div class="col-4">
+                        <i class="fas fa-mobile-alt fa-2x text-warning mb-2"></i>
+                        <div>USSD</div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        All transactions are secured with bank-grade encryption
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setAmount(amount) {
+    document.getElementById('amount').value = amount;
+}
+</script>
+{% endblock %}

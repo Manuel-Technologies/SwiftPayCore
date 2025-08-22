@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - SwiftPay Admin{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4"><i class="fas fa-chart-bar me-2"></i>Analytics Dashboard</h2>
+    </div>
+</div>
+
+<!-- Transaction Types Breakdown -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Transaction Types</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="transactionTypesChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Daily Transaction Volume -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Daily Transaction Volume (Last 30 Days)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="dailyVolumeChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Growth Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Daily User Signups (Last 30 Days)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="userGrowthChart" style="height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Users Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Top Users by Balance</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Rank</th>
+                                <th>Username</th>
+                                <th>Account Number</th>
+                                <th>Balance</th>
+                                <th>Member Since</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in top_users %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-{{ 'warning' if loop.index == 1 else 'secondary' if loop.index == 2 else 'info' if loop.index == 3 else 'light text-dark' }}">
+                                            #{{ loop.index }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <div class="fw-bold">{{ user.username }}</div>
+                                            <small class="text-muted">{{ user.email }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="font-monospace">{{ user.account_number }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-success">{{ format_currency(user.balance) }}</span>
+                                    </td>
+                                    <td>
+                                        {{ user.created_at.strftime('%b %d, %Y') }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Transaction Types Pie Chart
+const transactionTypesData = {
+    labels: [
+        {% for type_data in transaction_types %}
+            '{{ type_data.transaction_type.replace("_", " ").title() }}',
+        {% endfor %}
+    ],
+    datasets: [{
+        data: [
+            {% for type_data in transaction_types %}
+                {{ type_data.count }},
+            {% endfor %}
+        ],
+        backgroundColor: [
+            '#FF6384',
+            '#36A2EB',
+            '#FFCE56',
+            '#4BC0C0',
+            '#9966FF',
+            '#FF9F40'
+        ]
+    }]
+};
+
+new Chart(document.getElementById('transactionTypesChart'), {
+    type: 'doughnut',
+    data: transactionTypesData,
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Daily Volume Line Chart
+const dailyVolumeData = {
+    labels: [
+        {% for volume_data in daily_volumes %}
+            '{{ volume_data.date.strftime("%b %d") }}',
+        {% endfor %}
+    ],
+    datasets: [{
+        label: 'Transaction Volume (₦)',
+        data: [
+            {% for volume_data in daily_volumes %}
+                {{ volume_data.volume or 0 }},
+            {% endfor %}
+        ],
+        borderColor: '#36A2EB',
+        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+        fill: true
+    }]
+};
+
+new Chart(document.getElementById('dailyVolumeChart'), {
+    type: 'line',
+    data: dailyVolumeData,
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '₦' + value.toLocaleString();
+                    }
+                }
+            }
+        }
+    }
+});
+
+// User Growth Chart
+const userGrowthData = {
+    labels: [
+        {% for signup_data in daily_signups %}
+            '{{ signup_data.date.strftime("%b %d") }}',
+        {% endfor %}
+    ],
+    datasets: [{
+        label: 'New Users',
+        data: [
+            {% for signup_data in daily_signups %}
+                {{ signup_data.signups }},
+            {% endfor %}
+        ],
+        borderColor: '#4BC0C0',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        fill: true
+    }]
+};
+
+new Chart(document.getElementById('userGrowthChart'), {
+    type: 'line',
+    data: userGrowthData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
