@@ -6,17 +6,32 @@
 <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
         <div class="card shadow-lg border-0">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header bg-gradient text-white">
                 <h4 class="mb-0"><i class="fas fa-paper-plane me-2"></i>Send Money</h4>
+                <p class="mb-0 mt-1 opacity-75">Transfer money instantly to any SwiftPay user</p>
             </div>
             <div class="card-body p-4">
-                <form method="POST">
+                <form method="POST" id="transferForm">
                     <div class="mb-3">
                         <label for="account_number" class="form-label">Recipient Account Number</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-user"></i></span>
                             <input type="text" class="form-control" id="account_number" name="account_number" 
                                    placeholder="Enter 10-digit account number" maxlength="10" required>
+                        </div>
+                        <div id="accountValidation" class="mt-2" style="display: none;">
+                            <div id="accountFound" class="alert alert-success d-none">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Account Found:</strong> <span id="accountHolderName"></span>
+                            </div>
+                            <div id="accountNotFound" class="alert alert-danger d-none">
+                                <i class="fas fa-times-circle me-2"></i>
+                                <strong>Account not found</strong> - Please check the account number
+                            </div>
+                            <div id="accountLoading" class="alert alert-info d-none">
+                                <i class="fas fa-spinner fa-spin me-2"></i>
+                                Verifying account...
+                            </div>
                         </div>
                     </div>
                     
@@ -26,6 +41,10 @@
                             <span class="input-group-text">₦</span>
                             <input type="number" class="form-control" id="amount" name="amount" 
                                    min="1" step="0.01" placeholder="0.00" required>
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-wallet me-1"></i>
+                            Available balance: <span class="fw-bold text-success">{{ format_currency(user.balance) }}</span>
                         </div>
                     </div>
                     
@@ -38,8 +57,27 @@
                         </div>
                     </div>
                     
+                    <!-- Transaction Summary (Hidden until account is verified) -->
+                    <div id="transactionSummary" class="card bg-light border-0 mb-4" style="display: none;">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-clipboard-check me-2"></i>Transaction Summary
+                            </h6>
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted">Recipient:</small>
+                                    <div class="fw-bold" id="summaryRecipient">-</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Amount:</small>
+                                    <div class="fw-bold text-primary" id="summaryAmount">₦0.00</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">
+                        <button type="submit" class="btn btn-gradient btn-lg" id="submitBtn" disabled>
                             <i class="fas fa-paper-plane me-2"></i>Send Money
                         </button>
                         <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-secondary">
@@ -53,17 +91,136 @@
         <!-- Quick Transfer Tips -->
         <div class="card mt-4 border-info">
             <div class="card-header bg-info text-white">
-                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Transfer Tips</h6>
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Transfer Guidelines</h6>
             </div>
             <div class="card-body">
                 <ul class="mb-0">
-                    <li>Double-check the recipient's account number before sending</li>
-                    <li>Large transfers (>₦100,000) may require additional verification</li>
-                    <li>Transfer fees apply for amounts over ₦50,000</li>
-                    <li>Money is sent instantly to other SwiftPay users</li>
+                    <li><i class="fas fa-check text-success me-1"></i> Transfers are instant between SwiftPay users</li>
+                    <li><i class="fas fa-shield-alt text-primary me-1"></i> All transactions are secured and encrypted</li>
+                    <li><i class="fas fa-clock text-warning me-1"></i> Large transfers may require additional verification</li>
+                    <li><i class="fas fa-eye text-info me-1"></i> Always verify recipient details before sending</li>
                 </ul>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+let accountVerificationTimeout;
+let isAccountValid = false;
+
+document.getElementById('account_number').addEventListener('input', function() {
+    const accountNumber = this.value.trim();
+    
+    // Clear previous timeout
+    if (accountVerificationTimeout) {
+        clearTimeout(accountVerificationTimeout);
+    }
+    
+    // Hide validation messages
+    document.getElementById('accountValidation').style.display = 'none';
+    document.getElementById('accountFound').classList.add('d-none');
+    document.getElementById('accountNotFound').classList.add('d-none');
+    document.getElementById('accountLoading').classList.add('d-none');
+    document.getElementById('transactionSummary').style.display = 'none';
+    
+    isAccountValid = false;
+    updateSubmitButton();
+    
+    // Only validate if we have exactly 10 digits
+    if (accountNumber.length === 10 && /^\d{10}$/.test(accountNumber)) {
+        // Show loading state
+        document.getElementById('accountValidation').style.display = 'block';
+        document.getElementById('accountLoading').classList.remove('d-none');
+        
+        // Debounce the verification request
+        accountVerificationTimeout = setTimeout(() => {
+            verifyAccount(accountNumber);
+        }, 500);
+    }
+});
+
+document.getElementById('amount').addEventListener('input', function() {
+    updateTransactionSummary();
+});
+
+function verifyAccount(accountNumber) {
+    fetch('/user/verify_account', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ account_number: accountNumber })
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('accountLoading').classList.add('d-none');
+        
+        if (data.success) {
+            document.getElementById('accountHolderName').textContent = data.account_holder;
+            document.getElementById('accountFound').classList.remove('d-none');
+            isAccountValid = true;
+            updateTransactionSummary();
+            document.getElementById('transactionSummary').style.display = 'block';
+        } else {
+            document.getElementById('accountNotFound').classList.remove('d-none');
+            isAccountValid = false;
+        }
+        
+        updateSubmitButton();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('accountLoading').classList.add('d-none');
+        document.getElementById('accountNotFound').classList.remove('d-none');
+        isAccountValid = false;
+        updateSubmitButton();
+    });
+}
+
+function updateTransactionSummary() {
+    if (isAccountValid) {
+        const recipientName = document.getElementById('accountHolderName').textContent;
+        const amount = document.getElementById('amount').value;
+        
+        document.getElementById('summaryRecipient').textContent = recipientName;
+        document.getElementById('summaryAmount').textContent = amount ? `₦${parseFloat(amount).toLocaleString('en-NG', {minimumFractionDigits: 2})}` : '₦0.00';
+    }
+}
+
+function updateSubmitButton() {
+    const submitBtn = document.getElementById('submitBtn');
+    const amount = document.getElementById('amount').value;
+    
+    if (isAccountValid && amount && parseFloat(amount) > 0) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('btn-secondary');
+        submitBtn.classList.add('btn-gradient');
+    } else {
+        submitBtn.disabled = true;
+        submitBtn.classList.remove('btn-gradient');
+        submitBtn.classList.add('btn-secondary');
+    }
+}
+
+// Form submission validation
+document.getElementById('transferForm').addEventListener('submit', function(e) {
+    if (!isAccountValid) {
+        e.preventDefault();
+        alert('Please verify the recipient account number first.');
+        return false;
+    }
+    
+    const amount = parseFloat(document.getElementById('amount').value);
+    const balance = {{ user.balance }};
+    
+    if (amount > balance) {
+        e.preventDefault();
+        alert('Insufficient balance. Your current balance is ₦' + balance.toLocaleString('en-NG', {minimumFractionDigits: 2}));
+        return false;
+    }
+    
+    return confirm('Are you sure you want to send ₦' + amount.toLocaleString('en-NG', {minimumFractionDigits: 2}) + ' to ' + document.getElementById('accountHolderName').textContent + '?');
+});
+</script>
 {% endblock %}

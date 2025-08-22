@@ -53,25 +53,25 @@ def transfer():
         # Validation
         if not validate_account_number(account_number):
             flash('Invalid account number format', 'error')
-            return render_template('user/transfer.html')
+            return render_template('user/transfer.html', user=user, format_currency=format_currency)
         
         if amount <= 0:
             flash('Amount must be greater than 0', 'error')
-            return render_template('user/transfer.html')
+            return render_template('user/transfer.html', user=user, format_currency=format_currency)
         
         if amount > user.balance:
             flash('Insufficient balance', 'error')
-            return render_template('user/transfer.html')
+            return render_template('user/transfer.html', user=user, format_currency=format_currency)
         
         # Find recipient
         recipient = User.query.filter_by(account_number=account_number).first()
         if not recipient:
             flash('Recipient account not found', 'error')
-            return render_template('user/transfer.html')
+            return render_template('user/transfer.html', user=user, format_currency=format_currency)
         
         if recipient.id == user.id:
             flash('Cannot transfer to your own account', 'error')
-            return render_template('user/transfer.html')
+            return render_template('user/transfer.html', user=user, format_currency=format_currency)
         
         # Check for suspicious activity
         if is_suspicious_activity(user, amount, 'transfer'):
@@ -86,7 +86,7 @@ def transfer():
             transaction.description = f'Transfer to {recipient.username}: {description}'
             db.session.add(transaction)
             db.session.commit()
-            return render_template('user/transfer.html')
+            return render_template('user/transfer.html', user=user, format_currency=format_currency)
         
         # Process transfer
         user.balance -= amount
@@ -106,37 +106,14 @@ def transfer():
         flash(f'Successfully transferred {format_currency(amount)} to {recipient.username}', 'success')
         return redirect(url_for('user.dashboard'))
     
-    return render_template('user/transfer.html')
+    user = User.query.get(session['user_id'])
+    return render_template('user/transfer.html', user=user, format_currency=format_currency)
 
-@user_bp.route('/add_funds', methods=['GET', 'POST'])
+@user_bp.route('/add_funds')
 @require_login
 def add_funds():
-    if request.method == 'POST':
-        user = User.query.get(session['user_id'])
-        amount = float(request.form.get('amount', 0))
-        
-        if amount <= 0:
-            flash('Amount must be greater than 0', 'error')
-            return render_template('user/add_funds.html')
-        
-        # In a real app, this would integrate with a payment gateway
-        # For demo purposes, we'll simulate successful funding
-        user.balance += amount
-        
-        # Create transaction record
-        transaction = Transaction()
-        transaction.to_user_id = user.id
-        transaction.amount = amount
-        transaction.transaction_type = 'deposit'
-        transaction.status = 'completed'
-        transaction.description = 'Account funding'
-        db.session.add(transaction)
-        db.session.commit()
-        
-        flash(f'Successfully added {format_currency(amount)} to your wallet', 'success')
-        return redirect(url_for('user.dashboard'))
-    
-    return render_template('user/add_funds.html')
+    user = User.query.get(session['user_id'])
+    return render_template('user/add_funds.html', user=user)
 
 @user_bp.route('/withdraw', methods=['GET', 'POST'])
 @require_login
@@ -193,3 +170,19 @@ def transactions():
                          transactions=transactions, 
                          format_currency=format_currency,
                          user=user)
+
+@user_bp.route('/verify_account', methods=['POST'])
+@require_login
+def verify_account():
+    from flask import jsonify
+    data = request.get_json()
+    account_number = data.get('account_number')
+    
+    if not account_number or not validate_account_number(account_number):
+        return jsonify({'success': False, 'message': 'Invalid account number'})
+    
+    user = User.query.filter_by(account_number=account_number).first()
+    if user:
+        return jsonify({'success': True, 'account_holder': user.username})
+    else:
+        return jsonify({'success': False, 'message': 'Account not found'})
