@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Transfer - SwiftPay{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-warning text-dark text-center">
+                <h4 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Verify Your Transfer</h4>
+                <p class="mb-0 mt-2">Security verification required</p>
+            </div>
+            <div class="card-body p-4">
+                
+                <!-- Transfer Summary -->
+                <div class="alert alert-info border-0 mb-4">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-info-circle me-2"></i>Transfer Details
+                    </h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Recipient:</small>
+                            <div class="fw-bold">{{ recipient_name }}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Amount:</small>
+                            <div class="fw-bold text-primary">{{ format_currency(amount) }}</div>
+                        </div>
+                    </div>
+                    <hr class="my-2">
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Account:</small>
+                            <div class="fw-bold font-monospace">{{ account_number }}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Description:</small>
+                            <div class="fw-bold">{{ description or 'No description' }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OTP Sent Notice -->
+                <div class="alert alert-success border-0 mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-sms fa-2x text-success me-3"></i>
+                        <div>
+                            <h6 class="mb-1">OTP Sent Successfully!</h6>
+                            <small class="text-muted">
+                                A 6-digit verification code has been sent to your registered phone number ending in ****{{ user.username[-2:] }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="POST" id="otpForm">
+                    <input type="hidden" name="transfer_id" value="{{ transfer_id }}">
+                    
+                    <div class="mb-4">
+                        <label for="otp_code" class="form-label">
+                            <i class="fas fa-key me-2"></i>Enter 6-Digit OTP
+                        </label>
+                        <input type="text" class="form-control form-control-lg text-center font-monospace" 
+                               id="otp_code" name="otp_code" placeholder="000000" maxlength="6" 
+                               pattern="[0-9]{6}" required autofocus>
+                        <div class="form-text text-center">
+                            <i class="fas fa-clock me-1"></i>
+                            OTP expires in <span id="countdown" class="fw-bold text-warning">10:00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mb-4">
+                        <button type="submit" class="btn btn-success btn-lg" id="verifyBtn">
+                            <i class="fas fa-check me-2"></i>Verify & Complete Transfer
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" id="resendBtn" onclick="resendOTP()">
+                            <i class="fas fa-redo me-2"></i>Resend OTP
+                        </button>
+                    </div>
+                    
+                    <div class="text-center">
+                        <a href="{{ url_for('user.transfer') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Cancel Transfer
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Security Info -->
+        <div class="card mt-4 border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Security Notice</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0 list-unstyled">
+                    <li><i class="fas fa-check text-success me-2"></i>Never share your OTP with anyone</li>
+                    <li><i class="fas fa-clock text-warning me-2"></i>OTP is valid for 10 minutes only</li>
+                    <li><i class="fas fa-user-shield text-info me-2"></i>SwiftPay will never ask for your OTP via call/email</li>
+                    <li><i class="fas fa-lock text-primary me-2"></i>Your transaction is encrypted and secure</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+#otp_code {
+    letter-spacing: 0.5rem;
+    font-size: 1.5rem;
+    border: 2px solid #e3f2fd;
+    border-radius: 0.75rem;
+}
+
+#otp_code:focus {
+    border-color: #2196f3;
+    box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
+}
+
+.countdown-expired {
+    color: #dc3545 !important;
+}
+
+@media (max-width: 576px) {
+    #otp_code {
+        font-size: 1.25rem;
+        letter-spacing: 0.3rem;
+    }
+}
+</style>
+
+<script>
+// Countdown timer
+let timeLeft = 600; // 10 minutes in seconds
+const countdownElement = document.getElementById('countdown');
+const verifyBtn = document.getElementById('verifyBtn');
+const resendBtn = document.getElementById('resendBtn');
+
+function updateCountdown() {
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    const display = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    
+    countdownElement.textContent = display;
+    
+    if (timeLeft <= 0) {
+        countdownElement.textContent = 'EXPIRED';
+        countdownElement.classList.add('countdown-expired');
+        verifyBtn.disabled = true;
+        verifyBtn.innerHTML = '<i class="fas fa-times me-2"></i>OTP Expired';
+        verifyBtn.classList.remove('btn-success');
+        verifyBtn.classList.add('btn-danger');
+        resendBtn.classList.remove('btn-outline-primary');
+        resendBtn.classList.add('btn-primary');
+        return;
+    }
+    
+    if (timeLeft <= 60) {
+        countdownElement.classList.add('countdown-expired');
+    }
+    
+    timeLeft--;
+}
+
+// Start countdown
+const timer = setInterval(updateCountdown, 1000);
+updateCountdown();
+
+// OTP input formatting
+document.getElementById('otp_code').addEventListener('input', function(e) {
+    this.value = this.value.replace(/[^0-9]/g, '');
+    
+    if (this.value.length === 6) {
+        this.classList.add('is-valid');
+        verifyBtn.disabled = false;
+    } else {
+        this.classList.remove('is-valid');
+        verifyBtn.disabled = timeLeft <= 0;
+    }
+});
+
+// Auto-submit when 6 digits entered
+document.getElementById('otp_code').addEventListener('keyup', function(e) {
+    if (this.value.length === 6 && timeLeft > 0) {
+        setTimeout(() => {
+            if (this.value.length === 6) {
+                document.getElementById('otpForm').submit();
+            }
+        }, 500);
+    }
+});
+
+// Resend OTP function
+function resendOTP() {
+    const btn = document.getElementById('resendBtn');
+    const originalText = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
+    
+    fetch('/user/resend_otp', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ transfer_id: '{{ transfer_id }}' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reset timer
+            timeLeft = 600;
+            countdownElement.classList.remove('countdown-expired');
+            verifyBtn.disabled = false;
+            verifyBtn.innerHTML = '<i class="fas fa-check me-2"></i>Verify & Complete Transfer';
+            verifyBtn.classList.remove('btn-danger');
+            verifyBtn.classList.add('btn-success');
+            resendBtn.classList.remove('btn-primary');
+            resendBtn.classList.add('btn-outline-primary');
+            
+            // Show success message
+            showToast('OTP resent successfully!', 'success');
+        } else {
+            showToast('Failed to resend OTP. Please try again.', 'error');
+        }
+    })
+    .catch(() => {
+        showToast('Error sending OTP. Please try again.', 'error');
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    });
+}
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `position-fixed top-0 end-0 m-3 alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'error' ? 'times' : 'check'} me-2"></i>${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+    }, 5000);
+}
+
+// Prevent back button during verification
+history.pushState(null, null, location.href);
+window.onpopstate = function () {
+    if (confirm('Are you sure you want to cancel this transfer verification?')) {
+        window.location.href = '{{ url_for("user.transfer") }}';
+    } else {
+        history.go(1);
+    }
+};
+</script>
+{% endblock %}

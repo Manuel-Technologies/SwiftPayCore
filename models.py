@@ -56,3 +56,20 @@ class Admin(db.Model):
     
     def __repr__(self):
         return f'<Admin {self.username}>'
+
+class OTP(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    otp_code = db.Column(db.String(6), nullable=False)
+    purpose = db.Column(db.String(50), nullable=False)  # 'transfer', 'withdrawal', etc.
+    recipient_account = db.Column(db.String(10), nullable=True)  # For transfer verification
+    amount = db.Column(db.Float, nullable=True)  # For transaction verification
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    is_used = db.Column(db.Boolean, default=False)
+    
+    def __repr__(self):
+        return f'<OTP {self.id}: {self.otp_code} for user {self.user_id}>'
+    
+    def is_expired(self):
+        return datetime.utcnow() > self.expires_at

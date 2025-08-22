@@ -18,4 +18,5 @@ dependencies = [
     "python-dotenv>=1.1.1",
     "flask-bcrypt>=1.0.1",
     "sqlalchemy>=2.0.43",
+    "twilio>=9.7.1",
 ]
